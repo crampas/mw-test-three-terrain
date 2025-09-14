@@ -1,0 +1,151 @@
+{
+	"metadata": {
+		"version": 4.6,
+		"type": "Object",
+		"generator": "Object3D.toJSON"
+	},
+	"geometries": [
+		{
+			"uuid": "ee7e43ca-acff-4c39-800d-dd7307eb14ce",
+			"type": "BoxGeometry",
+			"width": 1.5,
+			"height": 0.5,
+			"depth": 0.3,
+			"widthSegments": 1,
+			"heightSegments": 1,
+			"depthSegments": 1
+		},
+		{
+			"uuid": "beb39a1e-068d-4270-b696-8875c9001761",
+			"type": "CylinderGeometry",
+			"radiusTop": 0.3,
+			"radiusBottom": 0.3,
+			"height": 0.2,
+			"radialSegments": 32,
+			"heightSegments": 1,
+			"openEnded": false,
+			"thetaStart": 0,
+			"thetaLength": 6.283185307179586
+		},
+		{
+			"uuid": "df113636-e8bc-4bc5-b09a-23ab470a444d",
+			"type": "CylinderGeometry",
+			"radiusTop": 0.05,
+			"radiusBottom": 0.05,
+			"height": 1,
+			"radialSegments": 32,
+			"heightSegments": 1,
+			"openEnded": false,
+			"thetaStart": 0,
+			"thetaLength": 6.283185307179586
+		},
+		{
+			"uuid": "b8a1d554-ed74-4429-9a5d-b7d0a3db402b",
+			"type": "CircleGeometry",
+			"radius": 0.06,
+			"segments": 32,
+			"thetaStart": 0,
+			"thetaLength": 6.283185307179586
+		},
+		{
+			"uuid": "b319c0bf-0291-4346-9952-e5f485a8fef1",
+			"type": "CylinderGeometry",
+			"radiusTop": 0.3,
+			"radiusBottom": 0.3,
+			"height": 0.2,
+			"radialSegments": 32,
+			"heightSegments": 1,
+			"openEnded": false,
+			"thetaStart": 0,
+			"thetaLength": 6.283185307179586
+		}],
+	"materials": [
+		{
+			"uuid": "fb0ef5f1-540b-45dd-a985-a8d94b2929a1",
+			"type": "MeshNormalMaterial",
+			"blendColor": 0
+		},
+		{
+			"uuid": "188aac17-440a-47ed-9e5c-0ab5230ad84a",
+			"type": "MeshNormalMaterial",
+			"blendColor": 0
+		},
+		{
+			"uuid": "05825ae5-61ab-4218-b577-1947e978072b",
+			"type": "MeshNormalMaterial",
+			"blendColor": 0
+		},
+		{
+			"uuid": "e81b890f-cb15-43c1-ac3d-c778ec5277cf",
+			"type": "MeshNormalMaterial",
+			"blendColor": 0
+		}],
+	"object": {
+		"uuid": "e54d838d-375a-47a8-bd52-bf1ba0056763",
+		"type": "Group",
+		"name": "bike",
+		"layers": 1,
+		"matrix": [1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1],
+		"up": [0,1,0],
+		"children": [
+			{
+				"uuid": "aaf501d1-db64-4f1d-8d52-87eb9c79eb38",
+				"type": "Mesh",
+				"name": "body",
+				"layers": 1,
+				"matrix": [0.6135808097962829,0.219415255539282,-0.0009517802813154361,0,-0.21807243505570204,0.6098323011779565,0.001522308639041963,0,0.002166767753032184,-0.0017214412680252164,0.9999961708714015,0,-0.6634350513664268,-0.2527067093545051,0,1],
+				"up": [0,1,0],
+				"geometry": "ee7e43ca-acff-4c39-800d-dd7307eb14ce",
+				"material": "fb0ef5f1-540b-45dd-a985-a8d94b2929a1"
+			},
+			{
+				"uuid": "5536eaa6-56fd-4f9f-bfca-8246ad31b00f",
+				"type": "Mesh",
+				"name": "wheel",
+				"layers": 1,
+				"matrix": [1,0,0,0,0,2.220446049250313e-16,1,0,0,-1,2.220446049250313e-16,0,-1.5,-0.6346998511674337,0,1],
+				"up": [0,1,0],
+				"geometry": "beb39a1e-068d-4270-b696-8875c9001761",
+				"material": "188aac17-440a-47ed-9e5c-0ab5230ad84a"
+			},
+			{
+				"uuid": "357649ad-f0e4-4e1a-84b4-f6f5c55a8a8c",
+				"type": "Group",
+				"name": "helm",
+				"layers": 1,
+				"matrix": [0.9365167798091145,0.3506227618623276,0,0,-0.3506227618623276,0.9365167798091145,0,0,0,0,1,0,-0.19466070231668836,0,0,1],
+				"up": [0,1,0],
+				"children": [
+					{
+						"uuid": "770bb0bd-3e95-4338-af61-0d5d1b25b3eb",
+						"type": "Mesh",
+						"name": "handle",
+						"layers": 1,
+						"matrix": [1,0,0,0,0,2.220446049250313e-16,1,0,0,-1,2.220446049250313e-16,0,0,0.2203120730005645,0,1],
+						"up": [0,1,0],
+						"geometry": "df113636-e8bc-4bc5-b09a-23ab470a444d",
+						"material": "05825ae5-61ab-4218-b577-1947e978072b"
+					},
+					{
+						"uuid": "13eb92bf-74c8-475c-8096-2283a863a60b",
+						"type": "Mesh",
+						"name": "actuator",
+						"layers": 1,
+						"matrix": [1,0,0,0,0,2.220446049250313e-16,-1,0,0,1,2.220446049250313e-16,0,0,0.2835057034014908,-0.08375498201048198,1],
+						"up": [0,1,0],
+						"geometry": "b8a1d554-ed74-4429-9a5d-b7d0a3db402b",
+						"material": "e81b890f-cb15-43c1-ac3d-c778ec5277cf"
+					},
+					{
+						"uuid": "4cc2f220-2d25-4345-9073-85ad83b7962a",
+						"type": "Mesh",
+						"name": "wheel",
+						"layers": 1,
+						"matrix": [1,0,0,0,0,2.220446049250313e-16,1,0,0,-1,2.220446049250313e-16,0,0,-0.5937401096040771,0,1],
+						"up": [0,1,0],
+						"geometry": "b319c0bf-0291-4346-9952-e5f485a8fef1",
+						"material": "188aac17-440a-47ed-9e5c-0ab5230ad84a"
+					}]
+			}]
+	}
+}
