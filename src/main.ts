@@ -39,8 +39,11 @@ const cowTexture = new THREE.TextureLoader().load('assets/textures/Kuhfellmuster
 const cowMaterial = new THREE.MeshBasicMaterial({map: cowTexture, wireframe: false});
 
 const objectLoader = new THREE.ObjectLoader();
+let bikeHandlebar = undefined;
+let helmGauge: Gauge = undefined;
+let speedGauge: Gauge = undefined;
 objectLoader.load("assets/models/bike.json", model => {
-    console.log("cow.json loaded", model);
+    console.log("bike.json loaded", model);
     model.rotateY(90 * MathUtils.DEG2RAD);
     model.position.set(0, -0.5, -1.5);
     const bikeContainer = new THREE.Group();
@@ -52,13 +55,22 @@ objectLoader.load("assets/models/bike.json", model => {
         console.log(item.name)
         return item.name == "helm"
     });
-    bikeHelm.rotateY(20 * MathUtils.DEG2RAD);
+    bikeHelm.rotateY(0 * MathUtils.DEG2RAD);
+    bikeHandlebar = bikeHelm;
+    helmGauge = Gauge.createGauge(bikeHandlebar, new Vector3(-0.1, 0.25, 0.0), -90, 90);
+    helmGauge.getMesh().rotateY(-Math.PI / 180 * 90);
+    helmGauge.getMesh().rotateX(-Math.PI / 180 * 20);
+    speedGauge = Gauge.createGauge(bikeHandlebar, new Vector3(-0.1, 0.25, 0.2), 0, 140);
+    speedGauge.getMesh().rotateY(-Math.PI / 180 * 90);
+    speedGauge.getMesh().rotateX(-Math.PI / 180 * 20);
+
+
 
 }, undefined, error => console.log("error loding cow", error));
 
 const objLoader = new OBJLoader();
 objLoader.load("assets/models/cow.obj", model => {
-        console.log("model loaded", model);
+        console.log("cow.obj loaded", model);
         model.traverse( function ( child ) {
             const mesh = child as Mesh;
             if ( mesh.isMesh ) {
@@ -112,7 +124,7 @@ const groundData = new Array(groundWidth * groundDepth);
     MathUtils.seededRandom(1);
     for (let i = 0, l = groundWidth * groundDepth; i < l; i++) {
         const x = i % groundWidth, y = Math.floor(i / groundWidth);
-        groundData[i] = 0 * x * (x - groundWidth) * y * (y - groundDepth) / 1000000;
+        groundData[i] = 1 * x * (x - groundWidth) * y * (y - groundDepth) / 1000000;
     }
 
     const vertices = geometry.attributes.position.array;
@@ -280,24 +292,28 @@ class Gauge {
     }
 
     private createContainer() {
+        const group = new THREE.Group();
         // const geometry = new THREE.PlaneGeometry(2, 2, 1, 1);
-        const geometry = new THREE.CircleGeometry(0.03, 16);
+        const geometry = new THREE.CircleGeometry(0.1, 16);
+        // const geometry = new THREE.CircleGeometry(0.30, 16);
         // geometry.rotateX(-Math.PI / 180 * 90);
         const material = new THREE.MeshBasicMaterial({
             color: new Color().setHex(0xaaaabb)
         });
         const mesh = new THREE.Mesh(geometry, material);
         // mesh.position.set(1, 10, 0);
-        this.container = mesh;
+        group.add(mesh);
+        this.container = group;
     }
 
     private createArrow() {
-        const geometry = new THREE.PlaneGeometry(0.002, 0.03, 1, 1);
+        const geometry = new THREE.PlaneGeometry(0.01, 0.1, 1, 1);
+        // const geometry = new THREE.PlaneGeometry(0.2, 1, 1, 1);
         // geometry.rotateX(-Math.PI / 180 * 45);
-        geometry.translate(0, 0.012, 0);
+        geometry.translate(0, 0.04, 0);
         const material = new THREE.MeshBasicMaterial({color: new Color().setHex(0xff4040)});
         const mesh = new THREE.Mesh(geometry, material);
-        mesh.position.set(0, 0, 0.001);
+        mesh.position.set(0, 0, 0.01);
         this.container.add(mesh);
         this.arrow = mesh;
     }
@@ -316,6 +332,7 @@ class Gauge {
     public updateGameObject() {
         const arrowValue = (this.value - this.min) / (this.max - this.min);
         this.arrow.rotation.z = -Math.PI / 180 * (arrowValue * 280 - 140);
+        // this.container.rotation.z = -Math.PI / 180 * (arrowValue * 280 - 140);
         this.labelDiv.textContent = Math.floor(this.value);
     }
 
@@ -333,7 +350,7 @@ let bike: Object3D = (() => {
     const material = new THREE.MeshBasicMaterial({color: new Color().setHex(0x404040)});
     const bike = new THREE.Mesh(geometry, material);
     bike.position.set(0, 0, 0);
-    // scene.add(bike);
+    scene.add(bike);
     return bike;
 })();
 
@@ -377,8 +394,8 @@ const label = (() => {
 })();
 
 
-const speedGauge = Gauge.createGauge(handlebar, new Vector3(-0.065, -0.01, 0.025), 0, 140);
-const helmGauge = Gauge.createGauge(handlebar, new Vector3(0.0, -0.01, 0.025), -90, 90);
+// const speedGauge = Gauge.createGauge(handlebar, new Vector3(-0.065, -0.01, 0.025), 0, 140);
+// const helmGauge = Gauge.createGauge(handlebar, new Vector3(0.0, -0.01, 0.025), -90, 90);
 
 // =============================================================================
 
@@ -396,10 +413,10 @@ renderer2.setSize( width / 4, height / 4 );
 renderer2.setAnimationLoop( animate );
 // renderer2.setScissorTest( true );
 renderer2.domElement.style.position = 'absolute';
-renderer2.domElement.style.width = '400px';
-renderer2.domElement.style.height = '400px';
+renderer2.domElement.style.width = '100px';
+renderer2.domElement.style.height = '100px';
 renderer2.domElement.style.right = '100px';
-renderer2.domElement.style.bottom = '100px';
+renderer2.domElement.style.top = '100px';
 document.body.appendChild( renderer2.domElement );
 
 const labelRenderer = new CSS2DRenderer();
@@ -557,13 +574,16 @@ function animate( time ) {
     }
     // handlebar
     handlebar.setRotationFromEuler(new THREE.Euler(-40 * MathUtils.DEG2RAD, -helm * MathUtils.DEG2RAD, 0, "YXZ"));
+    if (bikeHandlebar) {
+        bikeHandlebar.setRotationFromEuler(new THREE.Euler(0 * MathUtils.DEG2RAD, -helm * MathUtils.DEG2RAD, 0, "YXZ"));
+    }
     // speed gauge
-    {
+    if (speedGauge) {
         speedGauge.value = speed * 3.6;
         speedGauge.updateGameObject();
     }
     // helm gauge
-    {
+    if (helmGauge) {
         helmGauge.value = helm;
         helmGauge.updateGameObject();
     }
