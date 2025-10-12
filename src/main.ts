@@ -6,12 +6,17 @@ import {DRACOLoader} from "three/examples/jsm/loaders/DRACOLoader";
 import {Color, MathUtils, Mesh, Object3D, Scene, Vector3} from "three";
 import {CSS2DObject, CSS2DRenderer} from "three/examples/jsm/renderers/CSS2DRenderer";
 import {OBJLoader} from "three/examples/jsm/loaders/OBJLoader";
+import {Gauge} from "./gauge";
+import { CowTarget, createCow } from './cow';
+import { TerrainController } from './terrain';
+
 
 const SHOW_TRGETS = false;
 const SHOW_TRGETS_COW = true;
 const SHOW_TREES = true;
 const SHOW_TREES_FAN = false;
 const SHOW_TREES_SPRITES = false;
+const SHOW_HORSE = false;
 
 
 // =============================================================================
@@ -21,22 +26,29 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color().setHex(0xc0c0c0);
 scene.fog = new THREE.FogExp2( 0xc0c0c0, 0.050 );
 
+// ============================================================================
+// horse
 
-const loader = new GLTFLoader();
-let cowMesh: THREE.Object3D = null;
-/*
-loader.load("assets/models/Horse.glb", model => {
-            console.log("cow loaded", model);
-            // cowGeometry = geometry;
-        },
-        xhr => {},
-        error => {
-            console.error("error loding geometry", error);
-        });
-*/
+if (SHOW_HORSE) {
+    const loader = new GLTFLoader();
+    // let cowMesh: THREE.Object3D = null;
+    /*
+    loader.load("assets/models/Horse.glb", model => {
+                console.log("cow loaded", model);
+                // cowGeometry = geometry;
+            },
+            xhr => {},
+            error => {
+                console.error("error loding geometry", error);
+            });
+    */
+}
 
-const cowTexture = new THREE.TextureLoader().load('assets/textures/Kuhfellmuster.jpg');
-const cowMaterial = new THREE.MeshBasicMaterial({map: cowTexture, wireframe: false});
+// ============================================================================
+// bike
+
+const bike = new THREE.Group();
+scene.add(bike);
 
 const objectLoader = new THREE.ObjectLoader();
 let bikeHandlebar = undefined;
@@ -46,10 +58,11 @@ objectLoader.load("assets/models/bike.json", model => {
     console.log("bike.json loaded", model);
     model.rotateY(90 * MathUtils.DEG2RAD);
     model.position.set(0, -0.5, -1.5);
-    const bikeContainer = new THREE.Group();
+    // const bikeContainer = new THREE.Group();
+    let bikeContainer = bike;
     bikeContainer.add(model);
-    scene.add(bikeContainer);
-    bike = bikeContainer;
+    // scene.add(bikeContainer);
+    // bike = bikeContainer;
 
     const bikeHelm = model.children.find(item => {
         console.log(item.name)
@@ -63,37 +76,10 @@ objectLoader.load("assets/models/bike.json", model => {
     speedGauge = Gauge.createGauge(bikeHandlebar, new Vector3(-0.1, 0.25, 0.2), 0, 140);
     speedGauge.getMesh().rotateY(-Math.PI / 180 * 90);
     speedGauge.getMesh().rotateX(-Math.PI / 180 * 20);
-
-
-
 }, undefined, error => console.log("error loding cow", error));
 
-const objLoader = new OBJLoader();
-objLoader.load("assets/models/cow.obj", model => {
-        console.log("cow.obj loaded", model);
-        model.traverse( function ( child ) {
-            const mesh = child as Mesh;
-            if ( mesh.isMesh ) {
-                mesh.material = cowMaterial;
-            }
-        });
-        cowMesh = model;
+// ============================================================================
 
-        for (let index = 0; index < 100; index++) {
-            const cube = cowMesh.clone();
-            cube.position.set(Math.random() * 100, 1, Math.random() * 100);
-            cube.position.y = groundHeight(cube.position) + 1;
-            scene.add(cube);
-
-            targets.push({speed: new Vector3(Math.random(), 0, Math.random()), body: cube} as Cow);
-        }
-
-
-    },
-    xhr => {},
-    error => {
-        console.error("error loding geometry", error);
-    });
 
 const clock = new THREE.Clock();
 
@@ -103,9 +89,9 @@ const camera = new THREE.PerspectiveCamera( 60, width / height, 0.1, 200 );
 camera.position.set( 0, 1, 0 );
 camera.lookAt(20, 1, 0);
 
-const camera2 = new THREE.OrthographicCamera(10, -10, -10, 10, 1, 200);
-camera2.position.set(50, 20, 50);
-camera2.lookAt(50, 0, 50);
+const mapCamera = new THREE.OrthographicCamera(10, -10, -10, 10, 1, 200);
+mapCamera.position.set(50, 20, 50);
+mapCamera.lookAt(50, 0, 50);
 
 
 const stats = new Stats();
@@ -124,61 +110,21 @@ const groundData = new Array(groundWidth * groundDepth);
     MathUtils.seededRandom(1);
     for (let i = 0, l = groundWidth * groundDepth; i < l; i++) {
         const x = i % groundWidth, y = Math.floor(i / groundWidth);
-        groundData[i] = 1 * x * (x - groundWidth) * y * (y - groundDepth) / 1000000;
+        groundData[i] = 0 * x * (x - groundWidth) * y * (y - groundDepth) / 1000000;
     }
 
     const vertices = geometry.attributes.position.array;
     for ( let i = 0, j = 0, l = vertices.length; i < l; i ++, j += 3 ) {
         vertices[ j + 1 ] = groundData[i] + MathUtils.seededRandom() * 0.25;
     }
-
-    const texture = new THREE.TextureLoader().load('assets/textures/grasslight-big.jpg');
-    texture.colorSpace = THREE.SRGBColorSpace;
-    texture.repeat = new THREE.Vector2(10, 10);
-    texture.wrapS = THREE.RepeatWrapping;
-    texture.wrapT = THREE.RepeatWrapping;
-    const material = new THREE.MeshBasicMaterial({map: texture, wireframe: false});
-    const mesh = new THREE.Mesh(geometry, material);
-
-    scene.add(mesh);
 }
 
-// =============================================================================
-// trees
+const terrainController = new TerrainController(scene);
 
-const trees: THREE.Mesh[] = [];
-if (SHOW_TREES_SPRITES) {
-    for (let index = 0; index < 100; index++) {
-        const map = new THREE.TextureLoader().load( 'assets/sprites/tree-01.png' );
-        const material = new THREE.SpriteMaterial( { map: map } );
-        const sprite = new THREE.Sprite( material );
-        sprite.scale.set(10, 20, 10)
-        sprite.position.set(Math.random() * 100 - 50, 0, Math.random() * 100 - 50);
-
-        scene.add( sprite );
-    }
+function groundHeight(position: Vector3) {
+    return 0.0;
 }
-
-if (SHOW_TREES) {
-    const texture = new THREE.TextureLoader().load('assets/sprites/tree-01.png');
-    const material = new THREE.MeshBasicMaterial({
-        map: texture,
-        transparent: true,
-        alphaToCoverage: false,
-        wireframe: false
-    });
-    MathUtils.seededRandom(1);
-    for (let index = 0; index < 100; index++) {
-        const position = new Vector3(MathUtils.seededRandom() * 100, 0, MathUtils.seededRandom() * 100);
-        position.y = groundHeight(position);
-        const geometry = new THREE.PlaneGeometry(10, 20, 1, 1);
-        const mesh = new THREE.Mesh(geometry, material);
-        mesh.position.copy(position);
-        trees.push(mesh);
-        scene.add(mesh);
-    }
-}
-
+/*
 function groundHeight(position: Vector3) {
     const x = position.x;
     const y = position.z;
@@ -197,6 +143,10 @@ function groundHeight(position: Vector3) {
     const v = (1.0 - dy) * v1 + dy * v2;
     return v;
 }
+*/
+
+// =============================================================================
+// trees
 
 if (SHOW_TREES_FAN) {
     for (let index = 0; index < 100; index++) {
@@ -223,16 +173,11 @@ if (SHOW_TREES_FAN) {
     }
 }
 
-
-// =============================================================================
+// ============================================================================
 // cows
 
-interface Cow {
-    speed: Vector3;
-    body: THREE.Mesh;
-}
+const targets: CowTarget[] = [];
 
-const targets: Cow[] = [];
 if (SHOW_TRGETS) {
     const texture = new THREE.TextureLoader().load('assets/textures/Kuhfellmuster.jpg');
     for (let index = 0; index < 100; index++) {
@@ -246,12 +191,18 @@ if (SHOW_TRGETS) {
         cube.position.y = groundHeight(cube.position) + 1;
         scene.add(cube);
 
-        targets.push({speed: new Vector3(Math.random(), 0, Math.random()), body: cube} as Cow);
+        targets.push({speed: new Vector3(Math.random(), 0, Math.random()), body: cube} as CowTarget);
     }
 }
-if (SHOW_TRGETS_COW) {
-}
 
+if (SHOW_TRGETS_COW) {
+    for (let index = 0; index < 100; index++) {
+        const position = new Vector3(Math.random() * 100, 1, Math.random() * 100);
+        position.y = groundHeight(position) + 1;
+        const speed = new Vector3(Math.random(), 0, Math.random());
+        targets.push(createCow(scene, position, speed));
+    }
+}
 
 // =============================================================================
 // sky
@@ -265,82 +216,8 @@ if (SHOW_TRGETS_COW) {
     scene.add(mesh);
 }
 
-// =============================================================================
-// gauge
 
-class Gauge {
-    private container;
-    private arrow;
-    private labelDiv;
-    public value: number = 0;
-
-    public static createGauge(parent: Mesh, position: Vector3, min: number, max: number) {
-        const gauge = new Gauge(min, max);
-        const mesh = gauge.getMesh();
-        mesh.translateX(position.x);
-        mesh.translateY(position.y);
-        mesh.translateZ(position.z);
-        // mesh.position.set(position);
-        parent.add(mesh);
-        return gauge;
-    }
-
-    constructor(public min: number, public max: number) {
-        this.createContainer();
-        this.createArrow();
-        this.createText();
-    }
-
-    private createContainer() {
-        const group = new THREE.Group();
-        // const geometry = new THREE.PlaneGeometry(2, 2, 1, 1);
-        const geometry = new THREE.CircleGeometry(0.1, 16);
-        // const geometry = new THREE.CircleGeometry(0.30, 16);
-        // geometry.rotateX(-Math.PI / 180 * 90);
-        const material = new THREE.MeshBasicMaterial({
-            color: new Color().setHex(0xaaaabb)
-        });
-        const mesh = new THREE.Mesh(geometry, material);
-        // mesh.position.set(1, 10, 0);
-        group.add(mesh);
-        this.container = group;
-    }
-
-    private createArrow() {
-        const geometry = new THREE.PlaneGeometry(0.01, 0.1, 1, 1);
-        // const geometry = new THREE.PlaneGeometry(0.2, 1, 1, 1);
-        // geometry.rotateX(-Math.PI / 180 * 45);
-        geometry.translate(0, 0.04, 0);
-        const material = new THREE.MeshBasicMaterial({color: new Color().setHex(0xff4040)});
-        const mesh = new THREE.Mesh(geometry, material);
-        mesh.position.set(0, 0, 0.01);
-        this.container.add(mesh);
-        this.arrow = mesh;
-    }
-
-    private createText() {
-        const div = document.createElement('div');
-        div.className = 'label';
-        div.textContent = 'Eartdssadh';
-        div.style.backgroundColor = 'transparent';
-        this.labelDiv = div;
-        const label = new CSS2DObject(div);
-        label.position.set( 0, -0.02, 0.01 );
-        this.container.add( label );
-    }
-
-    public updateGameObject() {
-        const arrowValue = (this.value - this.min) / (this.max - this.min);
-        this.arrow.rotation.z = -Math.PI / 180 * (arrowValue * 280 - 140);
-        // this.container.rotation.z = -Math.PI / 180 * (arrowValue * 280 - 140);
-        this.labelDiv.textContent = Math.floor(this.value);
-    }
-
-    public getMesh() {
-        return this.container;
-    }
-}
-
+/*
 let bike: Object3D = (() => {
     const geometry = new THREE.CylinderGeometry(0.2, 0.2, 1, 8);
     geometry.rotateZ(-Math.PI / 180 * 90);
@@ -353,6 +230,7 @@ let bike: Object3D = (() => {
     scene.add(bike);
     return bike;
 })();
+*/
 
 let handlebar = (() => {
     const geometry = new THREE.CylinderGeometry(0.025, 0.025, 0.40, 8);
@@ -408,16 +286,16 @@ renderer.domElement.style.width = '100%';
 renderer.domElement.style.height = '100%';
 document.body.appendChild( renderer.domElement );
 
-const renderer2 = new THREE.WebGLRenderer( { antialias: true } );
-renderer2.setSize( width / 4, height / 4 );
-renderer2.setAnimationLoop( animate );
+const mapRenderer = new THREE.WebGLRenderer( { antialias: true } );
+mapRenderer.setSize( width / 4, height / 4 );
+mapRenderer.setAnimationLoop( animate );
 // renderer2.setScissorTest( true );
-renderer2.domElement.style.position = 'absolute';
-renderer2.domElement.style.width = '100px';
-renderer2.domElement.style.height = '100px';
-renderer2.domElement.style.right = '100px';
-renderer2.domElement.style.top = '100px';
-document.body.appendChild( renderer2.domElement );
+mapRenderer.domElement.style.position = 'absolute';
+mapRenderer.domElement.style.width = '100px';
+mapRenderer.domElement.style.height = '100px';
+mapRenderer.domElement.style.right = '50px';
+mapRenderer.domElement.style.top = '50px';
+document.body.appendChild( mapRenderer.domElement );
 
 const labelRenderer = new CSS2DRenderer();
 labelRenderer.setSize( window.innerWidth, window.innerHeight );
@@ -588,13 +466,16 @@ function animate( time ) {
         helmGauge.updateGameObject();
     }
 
-    camera2.position.set(camera.position.x, camera.position.y + 5, camera.position.z);
+    terrainController.updateTerrain(camera);
+
 
     // renderer.setSize(width, height);
     stats.update();
     renderer.render(scene, camera);
 
-    // renderer.setScissor( 0, 0, width / 2, height);
+    // map - view from above
+    mapCamera.position.set(camera.position.x, camera.position.y + 5, camera.position.z);
+   // renderer.setScissor( 0, 0, width / 2, height);
     // renderer.setViewport( 0, 0, width / 2, height);
     // renderer.setClearColor( 0xff0000, 1 );
     // renderer.render( scene, camera );
@@ -602,10 +483,10 @@ function animate( time ) {
     // renderer2.setScissor(width / 2, 0, width / 2, height );
     // renderer2.setViewport(width / 2, 0, width / 2, height );
     // renderer2.setClearColor( 0x00ff00, 1 );
-    renderer2.render( scene, camera2 );
+    mapRenderer.render(scene, mapCamera);
 
-    labelRenderer.render( scene, camera );
-
+    // all labels
+    labelRenderer.render(scene, camera);
 }
 
 function format2(n: number) {

@@ -10,6 +10,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "rxjs": "^7.8.2",
     "three": "^0.171.0",
     "three-addons": "^1.2.0"
   },
