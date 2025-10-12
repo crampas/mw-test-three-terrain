@@ -178,7 +178,7 @@ if (SHOW_TRGETS_COW) {
 
 // =============================================================================
 // sky
-{
+const skyObject = (() => {
     const width = 1000, depth = 1000;
     const geometry = new THREE.PlaneGeometry(width, depth, 1, 1);
     geometry.rotateX(Math.PI / 2);
@@ -186,7 +186,8 @@ if (SHOW_TRGETS_COW) {
     const mesh = new THREE.Mesh(geometry, material);
     mesh.position.set(0, 15, 0);
     scene.add(mesh);
-}
+    return mesh;
+})();
 
 
 /*
@@ -428,7 +429,7 @@ function animate( time ) {
     }
 
     terrainController.updateTerrain(camera);
-
+    skyObject.position.copy(camera.position.clone().setY(15));
 
     // renderer.setSize(width, height);
     stats.update();
