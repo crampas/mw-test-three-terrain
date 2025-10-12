@@ -145,34 +145,6 @@ function groundHeight(position: Vector3) {
 }
 */
 
-// =============================================================================
-// trees
-
-if (SHOW_TREES_FAN) {
-    for (let index = 0; index < 100; index++) {
-        const position = new Vector3(Math.random() * 100 - 50, 0, Math.random() * 100 - 50);
-        const geometry1 = new THREE.PlaneGeometry(10, 20, 1, 1);
-        const geometry2 = new THREE.PlaneGeometry(10, 20, 1, 1);
-        geometry2.rotateY(-Math.PI / 180 * 45);
-        const texture = new THREE.TextureLoader().load('assets/sprites/tree-01.png');
-        // texture.colorSpace = THREE.SRGBColorSpace;
-        const material = new THREE.MeshBasicMaterial({
-            map: texture,
-            transparent: true,
-            alphaToCoverage: false,
-            wireframe: false
-        });
-        const mesh1 = new THREE.Mesh(geometry1, material);
-        mesh1.position.copy(position);
-        scene.add(mesh1);
-        trees.push(mesh1);
-        const mesh2 = new THREE.Mesh(geometry2, material);
-        mesh2.position.copy(position);
-        // scene.add(mesh2);
-        // trees.push(mesh2);
-    }
-}
-
 // ============================================================================
 // cows
 
@@ -394,17 +366,6 @@ function animate( time ) {
         cow.body.position.add(ds);
         cow.body.position.y = groundHeight(cow.body.position) + 1.7;
     });
-
-
-    const direction = camera.position.clone();
-    const cameraView = camera.getWorldDirection(new Vector3());
-    direction.y = 0;
-    trees.forEach(tree => {
-        const treeLookAt = tree.position.clone().sub(cameraView);
-        tree.lookAt(treeLookAt);
-        // tree.lookAt(direction);
-    })
-
 
 
     // controls.update( clock.getDelta() );
