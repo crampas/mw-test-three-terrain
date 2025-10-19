@@ -24,7 +24,8 @@ const SHOW_HORSE = false;
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color().setHex(0xc0c0c0);
-scene.fog = new THREE.FogExp2( 0xc0c0c0, 0.050 );
+// scene.fog = new THREE.FogExp2( 0xc0c0c0, 0.050 );
+scene.fog = new THREE.FogExp2(0xc0c0c0, 0.020);
 
 // ============================================================================
 // horse
@@ -54,6 +55,7 @@ const objectLoader = new THREE.ObjectLoader();
 let bikeHandlebar = undefined;
 let helmGauge: Gauge = undefined;
 let speedGauge: Gauge = undefined;
+let compassGauge: Gauge = undefined;
 objectLoader.load("assets/models/bike.json", model => {
     console.log("bike.json loaded", model);
     model.rotateY(90 * MathUtils.DEG2RAD);
@@ -76,7 +78,10 @@ objectLoader.load("assets/models/bike.json", model => {
     speedGauge = Gauge.createGauge(bikeHandlebar, new Vector3(-0.1, 0.25, 0.2), 0, 140);
     speedGauge.getMesh().rotateY(-Math.PI / 180 * 90);
     speedGauge.getMesh().rotateX(-Math.PI / 180 * 20);
-}, undefined, error => console.log("error loding cow", error));
+    compassGauge = Gauge.createGauge(bikeHandlebar, new Vector3(-0.1, 0.25, -0.2), -180, 180, 0, 360);
+    compassGauge.getMesh().rotateY(-Math.PI / 180 * 90);
+    compassGauge.getMesh().rotateX(-Math.PI / 180 * 20);
+}, undefined, error => console.log("error loading bike", error));
 
 // ============================================================================
 
@@ -243,10 +248,6 @@ const label = (() => {
     bike.add(label);
     return div;
 })();
-
-
-// const speedGauge = Gauge.createGauge(handlebar, new Vector3(-0.065, -0.01, 0.025), 0, 140);
-// const helmGauge = Gauge.createGauge(handlebar, new Vector3(0.0, -0.01, 0.025), -90, 90);
 
 // =============================================================================
 
@@ -426,6 +427,12 @@ function animate( time ) {
     if (helmGauge) {
         helmGauge.value = helm;
         helmGauge.updateGameObject();
+    }
+    // compass gauge
+    if (compassGauge) {
+        const degrees = MathUtils.radToDeg(camera.rotation.reorder("YXZ").y);
+        compassGauge.value = degrees;
+        compassGauge.updateGameObject();
     }
 
     terrainController.updateTerrain(camera);

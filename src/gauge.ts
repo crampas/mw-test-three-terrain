@@ -10,9 +10,14 @@ export class Gauge {
     private arrow;
     private labelDiv;
     public value: number = 0;
+    private minAngle: number;
+    private maxAngle: number;
 
-    public static createGauge(parent: Mesh, position: Vector3, min: number, max: number) {
+    // public static createGauge(parent: Mesh, position: Vector3, min: number, max: number);
+    public static createGauge(parent: Mesh, position: Vector3, min: number, max: number, minAngle?: number, maxAngle?: number) {
         const gauge = new Gauge(min, max);
+        gauge.minAngle = minAngle === undefined ? -140 : minAngle;
+        gauge.maxAngle = maxAngle === undefined ? 140 : maxAngle;
         const mesh = gauge.getMesh();
         mesh.translateX(position.x);
         mesh.translateY(position.y);
@@ -68,7 +73,7 @@ export class Gauge {
 
     public updateGameObject() {
         const arrowValue = (this.value - this.min) / (this.max - this.min);
-        this.arrow.rotation.z = -Math.PI / 180 * (arrowValue * 280 - 140);
+        this.arrow.rotation.z = -Math.PI / 180 * (arrowValue * (this.maxAngle - this.minAngle) + this.minAngle);
         // this.container.rotation.z = -Math.PI / 180 * (arrowValue * 280 - 140);
         this.labelDiv.textContent = Math.floor(this.value);
     }
