@@ -20,7 +20,7 @@ const treeMaterial = new THREE.MeshBasicMaterial({
 
 class GroundTile {
     public ground: THREE.Object3D;
-    private trees: THREE.Object3D[] = [];
+    public trees: THREE.Object3D[] = [];
 
     constructor(tileIndexI: number, tileIndexJ: number) {
         this.ground = new THREE.Group();
@@ -68,23 +68,18 @@ class GroundTile {
                     .sub(cameraView);
             tree.lookAt(treeLookAt);
         });
+    }
 
-        camera.position.clone();
-        const bikeDirection = camera.getWorldDirection(new THREE.Vector3());
-
-        const cameraPositionRel1 = camera.position.clone().add(bikeDirection)
-                .sub(this.ground.position);
-        const cameraPositionRel2 = camera.position.clone()
-                .sub(this.ground.position);
-        this.trees.forEach(tree => {
-            const treeHitPoint = tree.position.clone().setY(camera.position.y);
-            const d1 = cameraPositionRel1.distanceTo(treeHitPoint);
-            const d2 = cameraPositionRel2.distanceTo(treeHitPoint);
-            if (d1 < 0.75 || d2 < 0.5) {
-                console.log("collision with tree", d1, d2);
+    public checkHit(position: THREE.Vector3) : THREE.Object3D {
+        const hitPosition = position.clone().sub(this.ground.position);
+        for (let tree of this.trees) {
+            const treeHitPoint = tree.position.clone().setY(position.y);
+            const d = hitPosition.distanceTo(treeHitPoint);
+            if (d < 0.75) {
+                return tree;
             }
-        });
-
+        };
+        return null;
     }
 }
 
@@ -128,6 +123,13 @@ export class TerrainController {
             this.currentTiles.forEach(tile => this.scene.add(tile.ground));
         }
         this.currentTiles.forEach(tile => tile.update(camera));
+    }
+
+    public checkHit(position: THREE.Vector3) : THREE.Object3D {
+        if (this.currentTiles.length > 5) {
+            return this.currentTiles[4].checkHit(position);
+        }
+        return null;
     }
 
 }

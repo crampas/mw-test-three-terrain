@@ -1,0 +1,104 @@
+import * as THREE from 'three';
+import { TerrainController } from './terrain';
+
+const g = 10;
+const bikeWheelbase = 1.5;
+
+
+export class Player {
+    private eyeLevel: number = 1.5;
+    public speed: number = 0.0;
+    private control:THREE.Vector3 = new THREE.Vector3(0, 0, 0);
+    
+    private pedal: number = 0.0;
+    public helm: number = 0.0;
+    public heading: number = 0.0;
+    public horn: boolean = false;
+
+    constructor(private camera: THREE.Camera, private terrainController: TerrainController) {
+        document.addEventListener("keydown", (event) => {
+            var keyCode = event.which;
+            if (keyCode == 38) {
+                this.pedal = 1;
+            } else if (keyCode == 40) {
+                this.pedal = -1;
+            } else if (keyCode == 37) {
+                this.control.x = -1; // left
+            } else if (keyCode == 39) {
+                this.control.x = 1; // right
+            } else if (keyCode == 39) {
+                // player.set(0, 0, 0);
+            } else if (keyCode == 32) {
+                this.horn = true;
+            }
+        }, false);
+        document.addEventListener("keyup", (event) => {
+            var keyCode = event.which;
+            if (keyCode == 38) {
+                this.pedal = 0;
+            } else if (keyCode == 40) {
+                this.pedal = 0;
+            } else if (keyCode == 37) {
+                this.control.x = 0; // left
+            } else if (keyCode == 39) {
+                this.control.x = 0;
+            } else if (keyCode == 39) {
+                // player.set(0, 0, 0);
+            } else if (keyCode == 32) {
+                this.horn = false;
+            }
+        }, false);
+    }
+
+    public update(time: number, dt: number) {
+        this.camera.position.setY(this.groundHeight(this.camera.position) + this.eyeLevel);
+
+        const mass = 80;
+        const frictionGround = sign(this.speed) * mass * 0.01;
+        const frictionAir = this.speed * 0.1; // cw
+        const force = this.pedal * 300; // power of engine
+        const accelaration = force / mass;
+        this.speed = this.speed + accelaration * dt - (frictionGround + frictionAir) * dt;
+        this.speed = Math.max(this.speed, -0.5);
+
+
+
+        // dy = sin(helm) * dt * v
+        // tan(dHeading) = dy / dWheel
+        // dHeading ∞ helm * dt * v / dWheel
+        this.helm = THREE.MathUtils.clamp(this.helm + this.control.x * dt * 50 - (this.helm * this.speed * 0.3 * dt), -45, 45);
+        this.heading = this.heading - this.speed * this.helm * THREE.MathUtils.DEG2RAD * dt / bikeWheelbase;
+        // helm
+        // camera.rotateZ(1 * dt);
+        // camera.setRotationFromAxisAngle(new Vector3(1, 0, 1), -30 / 180 * Math.PI);
+        // camera.setRotationFromEuler(new THREE.Euler(0, heading, sign(control.x) * -30 / 180 * Math.PI, "XYZ"))
+        const inclination = 0.1 * this.helm * THREE.MathUtils.DEG2RAD * this.speed * this.speed / g;
+        this.camera.setRotationFromEuler(new THREE.Euler(0,  this.heading, -inclination, "XYZ"))
+        // camera.rotateY(- sign(speed) * control.x * Math.PI / 180 * 40 *  dt)
+
+        // camera.up = new THREE.Vector3(0, -1, 0);
+
+        // velocity forward
+        const dir = this.camera.getWorldDirection(new THREE.Vector3());
+        this.camera.position.add(dir.multiplyScalar(this.speed * dt));
+
+
+
+        const bikeDirection = this.camera.getWorldDirection(new THREE.Vector3());
+        const hitPosition1 = this.camera.position.clone().add(bikeDirection);
+        const hitObject1 = this.terrainController.checkHit(hitPosition1);
+        const hitPosition2 = this.camera.position.clone();
+        const hitObject2 = this.terrainController.checkHit(hitPosition2);
+        if (hitObject1 || hitObject2) {
+            this.speed = Math.max(Math.min(this.speed, 0), -0.5);
+        }
+    }
+
+    groundHeight(position: THREE.Vector3) {
+        return 0;
+    }
+}
+
+function sign(n: number) {
+    return n > 0 ? 1 : (n < 0 ? -1 : 0);
+}

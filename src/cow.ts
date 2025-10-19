@@ -1,5 +1,3 @@
-console.log("cow module");
-
 import * as THREE from 'three';
 import {Color, MathUtils, Mesh, Object3D, Scene, Vector3} from "three";
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';

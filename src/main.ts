@@ -9,6 +9,7 @@ import {OBJLoader} from "three/examples/jsm/loaders/OBJLoader";
 import {Gauge} from "./gauge";
 import { CowTarget, createCow } from './cow';
 import { TerrainController } from './terrain';
+import { Player } from './player';
 
 
 const SHOW_TRGETS = false;
@@ -278,65 +279,10 @@ labelRenderer.domElement.style.top = '0px';
 document.body.appendChild( labelRenderer.domElement );
 
 
-
-
-const controls = new FirstPersonControls( camera, renderer.domElement );
-controls.movementSpeed = 100;
-controls.lookSpeed = 0.1;
-controls.lookVertical = false;
-
 window.addEventListener( 'resize', onWindowResize );
 
 
-const control = new Vector3(0, 0, 0);
-let pedal = 0;
-let force = 0;
-let speed = 0;
-let horn = false;
-
-document.addEventListener("keydown", onDocumentKeyDown, false);
-function onDocumentKeyDown(event) {
-    var keyCode = event.which;
-    if (keyCode == 38) {
-        pedal = 1;
-    } else if (keyCode == 40) {
-        pedal = -1;
-    } else if (keyCode == 37) {
-        control.x = -1; // left
-    } else if (keyCode == 39) {
-        control.x = 1; // right
-    } else if (keyCode == 39) {
-        // player.set(0, 0, 0);
-    } else if (keyCode == 32) {
-        horn = true;
-    }
-};
-document.addEventListener("keyup", onDocumentKeyUp, false);
-function onDocumentKeyUp(event) {
-    var keyCode = event.which;
-    if (keyCode == 38) {
-        pedal = 0;
-    } else if (keyCode == 40) {
-        pedal = 0;
-    } else if (keyCode == 37) {
-        control.x = 0; // left
-    } else if (keyCode == 39) {
-        control.x = 0;
-    } else if (keyCode == 39) {
-        // player.set(0, 0, 0);
-    } else if (keyCode == 32) {
-        horn = false;
-    }
-};
-
-
-const bikeWheelbase = 1.5;
-const eyeLevel = 1.5;
-const g = 10;
-let helm = 0;
-
-let heading = 225 * MathUtils.DEG2RAD;
-
+const player = new Player(camera, terrainController);
 
 /**
  *
@@ -353,7 +299,7 @@ function animate( time ) {
     const dt = clock.getDelta();
 
 
-    if (horn) {
+    if (player.horn) {
         targets.forEach(cow => {
             const cowDistance = cow.body.position.clone().sub(camera.position);
             if (cowDistance.length() < 10) {
@@ -370,40 +316,7 @@ function animate( time ) {
     });
 
 
-    // controls.update( clock.getDelta() );
-
-    const mass = 80;
-    const frictionGround = sign(speed) * mass * 0.01;
-    const frictionAir = speed * 0.1; // cw
-    force = pedal * 300; // power of engine
-    const accelaration = force / mass;
-    speed = speed + accelaration * dt - (frictionGround + frictionAir) * dt;
-    speed = Math.max(speed, 0);
-
-
-
-
-    camera.position.set( camera.position.x, groundHeight(camera.position) + eyeLevel, camera.position.z);
-    // camera.position.set(player.x, 10, camera.position.z);
-
-    // dy = sin(helm) * dt * v
-    // tan(dHeading) = dy / dWheel
-    // dHeading ∞ helm * dt * v / dWheel
-    helm = MathUtils.clamp(helm + control.x * dt * 50 - (helm * speed * 0.3 * dt), -45, 45);
-    heading = heading - sign(speed) * speed * helm * MathUtils.DEG2RAD * dt / bikeWheelbase;
-    // helm
-    // camera.rotateZ(1 * dt);
-    // camera.setRotationFromAxisAngle(new Vector3(1, 0, 1), -30 / 180 * Math.PI);
-    // camera.setRotationFromEuler(new THREE.Euler(0, heading, sign(control.x) * -30 / 180 * Math.PI, "XYZ"))
-    const inclination = 0.1 * helm * MathUtils.DEG2RAD * speed * speed / g;
-    camera.setRotationFromEuler(new THREE.Euler(0, heading, -inclination, "XYZ"))
-    // camera.rotateY(- sign(speed) * control.x * Math.PI / 180 * 40 *  dt)
-
-    // camera.up = new THREE.Vector3(0, -1, 0);
-
-    // velocity forward
-    const dir = camera.getWorldDirection(new Vector3());
-    camera.position.add(dir.multiplyScalar(speed * dt));
+    player.update(time, dt);
 
     // bike
     {
@@ -414,18 +327,18 @@ function animate( time ) {
         label.textContent = `x: ${format2(camera.position.x)}, y: ${format2(camera.position.y)}, z: ${format2(camera.position.z)}`;
     }
     // handlebar
-    handlebar.setRotationFromEuler(new THREE.Euler(-40 * MathUtils.DEG2RAD, -helm * MathUtils.DEG2RAD, 0, "YXZ"));
+    handlebar.setRotationFromEuler(new THREE.Euler(-40 * MathUtils.DEG2RAD, -player.helm * MathUtils.DEG2RAD, 0, "YXZ"));
     if (bikeHandlebar) {
-        bikeHandlebar.setRotationFromEuler(new THREE.Euler(0 * MathUtils.DEG2RAD, -helm * MathUtils.DEG2RAD, 0, "YXZ"));
+        bikeHandlebar.setRotationFromEuler(new THREE.Euler(0 * MathUtils.DEG2RAD, -player.helm * MathUtils.DEG2RAD, 0, "YXZ"));
     }
     // speed gauge
     if (speedGauge) {
-        speedGauge.value = speed * 3.6;
+        speedGauge.value = player.speed * 3.6;
         speedGauge.updateGameObject();
     }
     // helm gauge
     if (helmGauge) {
-        helmGauge.value = helm;
+        helmGauge.value = player.helm;
         helmGauge.updateGameObject();
     }
     // compass gauge
