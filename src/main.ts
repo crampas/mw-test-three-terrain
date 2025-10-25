@@ -266,7 +266,10 @@ const player = new Player(camera, terrainController, cowController);
  * b = (a * v^2) / (L * g)
  */
 function animate( time ) {
-    const dt = Math.min(clock.getDelta(), 0.2);
+    const dt = clock.getDelta();
+    if (dt > 0.2) {
+        return;
+    }
 
     if (player.horn) {
         cowController.pushCows(camera.position);

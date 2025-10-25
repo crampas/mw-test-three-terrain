@@ -8,13 +8,26 @@ groundTexture.colorSpace = THREE.SRGBColorSpace;
 groundTexture.repeat = new THREE.Vector2(10, 10);
 groundTexture.wrapS = THREE.RepeatWrapping;
 groundTexture.wrapT = THREE.RepeatWrapping;
+
+const streetTexture = new THREE.TextureLoader().load('assets/textures/street-01-texture.png');
+streetTexture.colorSpace = THREE.SRGBColorSpace;
+streetTexture.repeat = new THREE.Vector2(1, 1);
+// groundTexture2.wrapS = THREE.RepeatWrapping;
+// groundTexture2.wrapT = THREE.RepeatWrapping;
+
 const groundMaterial = new THREE.MeshBasicMaterial({map: groundTexture, wireframe: false});
+const streetMaterial = new THREE.MeshBasicMaterial({
+    map: streetTexture, 
+    transparent: true,
+    alphaToCoverage: false,
+    wireframe: false
+});
 
 const treeTexture = new THREE.TextureLoader().load('assets/sprites/tree-01.png');
 const treeMaterial = new THREE.MeshBasicMaterial({
     map: treeTexture,
     transparent: true,
-    alphaToCoverage: false,
+    alphaToCoverage: true,
     wireframe: false
 });
 
@@ -64,6 +77,9 @@ class GroundTile {
             }
         }
         this.ground.add(new THREE.Mesh(tileGeometry, groundMaterial));
+        const streetObject = new THREE.Mesh(tileGeometry, streetMaterial);
+        streetObject.position.setY(0.01);
+        this.ground.add(streetObject);
     }
 
     createTrees() {
