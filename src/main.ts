@@ -106,24 +106,6 @@ document.body.appendChild( stats.dom );
 
 // =============================================================================
 // ground
-const groundWidth = 100, groundDepth = 100;
-const groundData = new Array(groundWidth * groundDepth);
-{
-    const geometry = new THREE.PlaneGeometry(groundWidth, groundDepth, 99, 99);
-    geometry.rotateX(-Math.PI / 2);
-    geometry.translate(50, 0, 50);
-
-    MathUtils.seededRandom(1);
-    for (let i = 0, l = groundWidth * groundDepth; i < l; i++) {
-        const x = i % groundWidth, y = Math.floor(i / groundWidth);
-        groundData[i] = 0 * x * (x - groundWidth) * y * (y - groundDepth) / 1000000;
-    }
-
-    const vertices = geometry.attributes.position.array;
-    for ( let i = 0, j = 0, l = vertices.length; i < l; i ++, j += 3 ) {
-        vertices[ j + 1 ] = groundData[i] + MathUtils.seededRandom() * 0.25;
-    }
-}
 
 const terrainController = new TerrainController(scene);
 
@@ -270,7 +252,7 @@ window.addEventListener('resize', () => {
 });
 
 
-const player = new Player(camera, terrainController);
+const player = new Player(camera, terrainController, cowController);
 
 /**
  *
@@ -299,7 +281,7 @@ function animate( time ) {
         mesh.position.copy( camera.position );
         mesh.rotation.copy( camera.rotation );
         mesh.updateMatrix();
-        label.textContent = `x: ${format2(camera.position.x)}, y: ${format2(camera.position.y)}, z: ${format2(camera.position.z)}`;
+        label.textContent = `x: ${format2(camera.position.x)}, z: ${format2(camera.position.z)}`;
     }
     // handlebar
     handlebar.setRotationFromEuler(new THREE.Euler(-40 * MathUtils.DEG2RAD, -player.helm * MathUtils.DEG2RAD, 0, "YXZ"));

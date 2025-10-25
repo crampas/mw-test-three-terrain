@@ -36,6 +36,13 @@ export class CowTarget {
         this.body.position.add(ds);
         this.body.position.y = 1.7;
     }
+
+    public checkHit(position: Vector3) {
+        const d = position.distanceTo(this.body.position);
+        if (d < 0.75) {
+            return this;
+        }
+    }
 }
 
 
@@ -94,5 +101,15 @@ export class CowController {
             cow.update(dt);
         });
     }
-}
 
+    public checkHit(position: THREE.Vector3) : CowTarget {
+        for (let cow of this.targets) {
+            const hit = cow.checkHit(position);
+            if (hit) {
+                return hit;
+            }
+        }
+        return null;
+    }
+    
+}

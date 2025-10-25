@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { TerrainController } from './terrain';
+import { CowController } from './cow';
 
 const g = 10;
 const mass = 180;
@@ -16,7 +17,10 @@ export class Player {
     public heading: number = 0.0;
     public horn: boolean = false;
 
-    constructor(private camera: THREE.Camera, private terrainController: TerrainController) {
+    constructor(private camera: THREE.Camera, 
+            private terrainController: TerrainController,
+            private cowController: CowController
+        ) {
         document.addEventListener("keydown", (event) => {
             var keyCode = event.keyCode;
             if (keyCode == 38) {
@@ -87,10 +91,16 @@ export class Player {
         // collision detection
         const bikeDirection = this.camera.getWorldDirection(new THREE.Vector3());
         const hitPosition1 = this.camera.position.clone().add(bikeDirection);
-        const hitObject1 = this.terrainController.checkHit(hitPosition1);
         const hitPosition2 = this.camera.position.clone();
-        const hitObject2 = this.terrainController.checkHit(hitPosition2);
-        if (hitObject1 || hitObject2) {
+
+        const hitTerrain1 = this.terrainController.checkHit(hitPosition1);
+        const hitTerrain2 = this.terrainController.checkHit(hitPosition2);
+        if (hitTerrain1 || hitTerrain2) {
+            this.speed = Math.max(Math.min(this.speed, 0), -0.5);
+        }
+        const hitCow1 = this.cowController.checkHit(hitPosition1);
+        const hitCow2 = this.cowController.checkHit(hitPosition2);
+        if (hitCow1 || hitCow2) {
             this.speed = Math.max(Math.min(this.speed, 0), -0.5);
         }
     }
