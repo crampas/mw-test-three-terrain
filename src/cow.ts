@@ -6,6 +6,7 @@ import { BehaviorSubject, Observable, single, defer, shareReplay } from 'rxjs';
 const cowTexture = new THREE.TextureLoader().load('assets/textures/Kuhfellmuster.jpg');
 export const cowMaterial = new THREE.MeshBasicMaterial({map: cowTexture, wireframe: false});
 
+const homeZone = new THREE.Sphere(new THREE.Vector3(50, 0, 50), 10);
 
 export class CowTarget {
     targetSpeed: Vector3 = new THREE.Vector3();
@@ -16,15 +17,22 @@ export class CowTarget {
 
     public pushFrom(position: Vector3) {
         const cowDistance = this.body.position.clone().sub(position);
-        if (cowDistance.length() < 100) {
+        if (cowDistance.length() < 20) {
             // this.speed.add(cowDistance.multiplyScalar(0.1 / (cowDistance.length() + 1.0)));
             this.targetSpeed.add(cowDistance.multiplyScalar(0.1 / (cowDistance.length() + 1.0)));
-            const maxSpeed = Math.min(this.targetSpeed.length(), 2.0);
+            const maxSpeed = Math.min(this.targetSpeed.length(), 4.0);
             this.targetSpeed.normalize().multiplyScalar(maxSpeed);
         }
     }
 
     public update(dt: number) {
+        if (homeZone.containsPoint(this.body.position)) {
+            this.body.position.setY(0);
+            this.speed.multiplyScalar(0);
+            this.targetSpeed = new Vector3();
+            return;
+        }
+
         const ds = this.speed.clone().multiplyScalar(dt);
         this.targetSpeed.multiplyScalar(1 - 0.5 * dt); // deceleration
 
@@ -34,6 +42,7 @@ export class CowTarget {
 
         this.body.lookAt(this.speed.clone().add(this.body.position));
         this.body.position.add(ds);
+
         this.body.position.y = 1.7;
     }
 

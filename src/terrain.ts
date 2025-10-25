@@ -11,9 +11,9 @@ groundTexture.wrapT = THREE.RepeatWrapping;
 
 const streetTexture = new THREE.TextureLoader().load('assets/textures/street-01-texture.png');
 streetTexture.colorSpace = THREE.SRGBColorSpace;
-streetTexture.repeat = new THREE.Vector2(1, 1);
-// groundTexture2.wrapS = THREE.RepeatWrapping;
-// groundTexture2.wrapT = THREE.RepeatWrapping;
+streetTexture.repeat = new THREE.Vector2(2, 2);
+streetTexture.wrapS = THREE.MirroredRepeatWrapping;
+streetTexture.wrapT = THREE.MirroredRepeatWrapping;
 
 const groundMaterial = new THREE.MeshBasicMaterial({map: groundTexture, wireframe: false});
 const streetMaterial = new THREE.MeshBasicMaterial({
@@ -23,6 +23,15 @@ const streetMaterial = new THREE.MeshBasicMaterial({
     wireframe: false
 });
 
+const lakeTexture = new THREE.TextureLoader().load('assets/textures/lake-01-texture.png');
+const lakeMaterial = new THREE.MeshBasicMaterial({
+    map: lakeTexture, 
+    transparent: true,
+    alphaToCoverage: false,
+    wireframe: false
+});
+
+
 const treeTexture = new THREE.TextureLoader().load('assets/sprites/tree-01.png');
 const treeMaterial = new THREE.MeshBasicMaterial({
     map: treeTexture,
@@ -31,9 +40,14 @@ const treeMaterial = new THREE.MeshBasicMaterial({
     wireframe: false
 });
 
-const obstacleMaterial = new THREE.MeshBasicMaterial({color: new THREE.Color().setHex(0xf0a0a0)});
+const obstacleMaterial = new THREE.MeshPhongMaterial({
+    color: new THREE.Color().setHex(0xff2020),
+    side: THREE.DoubleSide,
+    emissive: new THREE.Color().setHex(0xaa0000),
+    wireframe: false
+});
 const obstackes = [
-    new THREE.Vector3(10, 0, 10),
+    new THREE.Vector3(50, 0, 50),
     new THREE.Vector3(210, 0, 10)
 ]
 
@@ -69,6 +83,8 @@ class GroundTile {
             }
         }
 
+        const createLake = THREE.MathUtils.seededRandom() > 0.8;
+
         // wobbly ground
         // keep edges at 0 to avoid breaks
         for (let i = 1; i < 99; i++) {
@@ -77,9 +93,16 @@ class GroundTile {
             }
         }
         this.ground.add(new THREE.Mesh(tileGeometry, groundMaterial));
+       
         const streetObject = new THREE.Mesh(tileGeometry, streetMaterial);
         streetObject.position.setY(0.01);
         this.ground.add(streetObject);
+
+        if (createLake) {
+            const lakeObject = new THREE.Mesh(tileGeometry, lakeMaterial);
+            lakeObject.position.setY(0.02);
+            this.ground.add(lakeObject);
+        }
     }
 
     createTrees() {
@@ -99,9 +122,10 @@ class GroundTile {
         for (let position of obstackes) {
             if (position.x >= this.tileIndexI * groundWidth && position.x <= (this.tileIndexI + 1) * groundWidth &&
                 position.y >= this.tileIndexJ * groundWidth && position.y <= (this.tileIndexJ + 1) * groundWidth) {
-                const geometry = new THREE.CylinderGeometry(2, 2, 500, 8, 1);
+                // const geometry = new THREE.CylinderGeometry(2, 2, 500, 8, 1);
+                const geometry = new THREE.ConeGeometry(10, 10, 16, 1, true);
                 const obstacle = new THREE.Mesh(geometry, obstacleMaterial);
-                obstacle.position.copy(position.clone().sub(origin));
+                obstacle.position.copy(position.clone().sub(origin).setY(8));
                 this.ground.add(obstacle);
             }
         }

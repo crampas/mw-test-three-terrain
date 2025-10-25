@@ -24,6 +24,8 @@ const SHOW_HORSE = false;
 // init
 
 const scene = new THREE.Scene();
+scene.add(new THREE.AmbientLight(new THREE.Color().setHex(0xaaffff)));
+
 scene.background = new THREE.Color().setHex(0xc0c0c0);
 // scene.fog = new THREE.FogExp2( 0xc0c0c0, 0.050 );
 scene.fog = new THREE.FogExp2(0xc0c0c0, 0.020);
@@ -84,6 +86,18 @@ objectLoader.load("assets/models/bike.json", model => {
     compassGauge.getMesh().rotateX(-Math.PI / 180 * 20);
 }, undefined, error => console.log("error loading bike", error));
 
+// position label on bike
+const label = (() => {
+    const div = document.createElement('div');
+    div.className = 'label';
+    div.textContent = 'Eartdssadh';
+    div.style.backgroundColor = 'transparent';
+    const label = new CSS2DObject(div);
+    label.position.set(0.0, -0.32, -0.6 );
+    bike.add(label);
+    return div;
+})();
+
 // ============================================================================
 
 
@@ -95,7 +109,7 @@ const camera = new THREE.PerspectiveCamera( 60, width / height, 0.1, 200 );
 camera.position.set( 0, 1, 0 );
 camera.lookAt(20, 1, 0);
 
-const mapCamera = new THREE.OrthographicCamera(20, -20, -20, 20, 1, 200);
+const mapCamera = new THREE.OrthographicCamera(50, -50, -50, 50, 1, 200);
 mapCamera.position.set(50, 20, 50);
 mapCamera.lookAt(50, 0, 50);
 
@@ -140,7 +154,7 @@ const cowController = new CowController(scene);
 
 if (SHOW_TRGETS_COW) {
     for (let index = 0; index < 100; index++) {
-        const position = new Vector3(Math.random() * 100, 1, Math.random() * 100);
+        const position = new Vector3(Math.random() * 600 - 300, 1, Math.random() * 600 - 300);
         position.y = groundHeight(position) + 1;
         const speed = new Vector3(Math.random(), 0, Math.random());
         cowController.createCow(position, speed);
@@ -160,60 +174,6 @@ const skyObject = (() => {
     return mesh;
 })();
 
-
-/*
-let bike: Object3D = (() => {
-    const geometry = new THREE.CylinderGeometry(0.2, 0.2, 1, 8);
-    geometry.rotateZ(-Math.PI / 180 * 90);
-    geometry.rotateX(-Math.PI / 180 * 90);
-    geometry.rotateY(-Math.PI / 180 * 90);
-    geometry.translate(0, -0.5, -0.5);
-    const material = new THREE.MeshBasicMaterial({color: new Color().setHex(0x404040)});
-    const bike = new THREE.Mesh(geometry, material);
-    bike.position.set(0, 0, 0);
-    scene.add(bike);
-    return bike;
-})();
-*/
-
-let handlebar = (() => {
-    const geometry = new THREE.CylinderGeometry(0.025, 0.025, 0.40, 8);
-    geometry.rotateZ(-Math.PI / 180 * 90);
-    geometry.rotateX(-Math.PI / 180 * 90);
-    geometry.rotateY(-Math.PI / 180 * 0);
-    // geometry.translate(0, -0.5, -0.5);
-    const material = new THREE.MeshNormalMaterial(); //{color: new Color().setHex(0x808080)});
-    const mesh = new THREE.Mesh(geometry, material);
-    mesh.position.set(0, -0.15, -0.4);
-    return mesh;
-})();
-bike.add(handlebar);
-
-const wheel1 = (() => {
-    const geometry = new THREE.CylinderGeometry(0.25, 0.25, 0.10, 32);
-    geometry.rotateZ(-Math.PI / 180 * 90);
-    // geometry.rotateX(-Math.PI / 180 * 90);
-    // geometry.rotateY(-Math.PI / 180 * 90);
-    // geometry.translate(0, -0.5, -0.5);
-    const material = new THREE.MeshNormalMaterial() // ({color: new Color().setHex(0x808080)});
-    const mesh = new THREE.Mesh(geometry, material);
-    mesh.position.set(0, -0.1, -0.6);
-    // mesh.rotateZ(MathUtils.DEG2RAD * 90)
-    return mesh;
-})();
-handlebar.add(wheel1);
-
-
-const label = (() => {
-    const div = document.createElement('div');
-    div.className = 'label';
-    div.textContent = 'Eartdssadh';
-    div.style.backgroundColor = 'transparent';
-    const label = new CSS2DObject(div);
-    label.position.set(0.0, -0.32, -0.6 );
-    bike.add(label);
-    return div;
-})();
 
 // =============================================================================
 
@@ -287,7 +247,6 @@ function animate( time ) {
         label.textContent = `x: ${format2(camera.position.x)}, z: ${format2(camera.position.z)}`;
     }
     // handlebar
-    handlebar.setRotationFromEuler(new THREE.Euler(-40 * MathUtils.DEG2RAD, -player.helm * MathUtils.DEG2RAD, 0, "YXZ"));
     if (bikeHandlebar) {
         bikeHandlebar.setRotationFromEuler(new THREE.Euler(0 * MathUtils.DEG2RAD, -player.helm * MathUtils.DEG2RAD, 0, "YXZ"));
     }
