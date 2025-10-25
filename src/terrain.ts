@@ -40,10 +40,14 @@ const treeMaterial = new THREE.MeshBasicMaterial({
     wireframe: false
 });
 
+const obstacleTexture = new THREE.TextureLoader().load('assets/textures/IMGP5480_seamless.jpg');
+obstacleTexture.repeat = new THREE.Vector2(2, 1);
+obstacleTexture.wrapS = THREE.RepeatWrapping;
+obstacleTexture.wrapT = THREE.RepeatWrapping;
 const obstacleMaterial = new THREE.MeshPhongMaterial({
-    color: new THREE.Color().setHex(0xff2020),
+    map: obstacleTexture,
+    transparent: false,
     side: THREE.DoubleSide,
-    emissive: new THREE.Color().setHex(0xaa0000),
     wireframe: false
 });
 const obstackes = [
