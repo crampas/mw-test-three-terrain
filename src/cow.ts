@@ -6,9 +6,36 @@ import { BehaviorSubject, Observable, single, defer, shareReplay } from 'rxjs';
 const cowTexture = new THREE.TextureLoader().load('assets/textures/Kuhfellmuster.jpg');
 export const cowMaterial = new THREE.MeshBasicMaterial({map: cowTexture, wireframe: false});
 
-export interface CowTarget {
-    speed: Vector3;
-    body: THREE.Mesh;
+
+export class CowTarget {
+    targetSpeed: Vector3 = new THREE.Vector3();
+
+    constructor(public body: THREE.Object3D, public speed: Vector3) {
+        this.targetSpeed = speed.clone();
+    }
+
+    public pushFrom(position: Vector3) {
+        const cowDistance = this.body.position.clone().sub(position);
+        if (cowDistance.length() < 100) {
+            // this.speed.add(cowDistance.multiplyScalar(0.1 / (cowDistance.length() + 1.0)));
+            this.targetSpeed.add(cowDistance.multiplyScalar(0.1 / (cowDistance.length() + 1.0)));
+            const maxSpeed = Math.min(this.targetSpeed.length(), 2.0);
+            this.targetSpeed.normalize().multiplyScalar(maxSpeed);
+        }
+    }
+
+    public update(dt: number) {
+        const ds = this.speed.clone().multiplyScalar(dt);
+        this.targetSpeed.multiplyScalar(1 - 0.5 * dt); // deceleration
+
+        this.speed = this.speed.clone().multiplyScalar(1.0 - dt * 0.4)
+                .add(this.targetSpeed.clone().multiplyScalar(dt * 0.4))
+                .multiplyScalar(1.0);
+
+        this.body.lookAt(this.speed.clone().add(this.body.position));
+        this.body.position.add(ds);
+        this.body.position.y = 1.7;
+    }
 }
 
 
@@ -43,6 +70,29 @@ export const createCow = (scene: Scene, position: Vector3, speed: Vector3) => {
     });
     body.position.set(position.x, position.y, position.z);
     scene.add(body);
-    return {speed, body} as CowTarget;
+    return new CowTarget(body, speed);
+}
+
+export class CowController {
+    public targets: CowTarget[] = [];
+
+    constructor(private scene: THREE.Scene) {
+    }
+
+    createCow(position: Vector3, speed: Vector3) {
+        this.targets.push(createCow(this.scene, position, speed));
+    }
+
+    pushCows(position: Vector3) {
+         this.targets.forEach(cow => {
+            cow.pushFrom(position);
+        });
+    }
+
+    update(dt: number) {
+        this.targets.forEach(cow => {
+            cow.update(dt);
+        });
+    }
 }
 

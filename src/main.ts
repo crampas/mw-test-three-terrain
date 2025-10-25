@@ -7,7 +7,7 @@ import {Color, MathUtils, Mesh, Object3D, Scene, Vector3} from "three";
 import {CSS2DObject, CSS2DRenderer} from "three/examples/jsm/renderers/CSS2DRenderer";
 import {OBJLoader} from "three/examples/jsm/loaders/OBJLoader";
 import {Gauge} from "./gauge";
-import { CowTarget, createCow } from './cow';
+import { CowController, CowTarget, createCow } from './cow';
 import { TerrainController } from './terrain';
 import { Player } from './player';
 
@@ -95,7 +95,7 @@ const camera = new THREE.PerspectiveCamera( 60, width / height, 0.1, 200 );
 camera.position.set( 0, 1, 0 );
 camera.lookAt(20, 1, 0);
 
-const mapCamera = new THREE.OrthographicCamera(10, -10, -10, 10, 1, 200);
+const mapCamera = new THREE.OrthographicCamera(20, -20, -20, 20, 1, 200);
 mapCamera.position.set(50, 20, 50);
 mapCamera.lookAt(50, 0, 50);
 
@@ -154,31 +154,14 @@ function groundHeight(position: Vector3) {
 // ============================================================================
 // cows
 
-const targets: CowTarget[] = [];
-
-if (SHOW_TRGETS) {
-    const texture = new THREE.TextureLoader().load('assets/textures/Kuhfellmuster.jpg');
-    for (let index = 0; index < 100; index++) {
-        const geometry = new THREE.CylinderGeometry( 0.5, 0.5, 1.5, 16 );
-        geometry.rotateZ(-Math.PI / 180 * 90);
-        geometry.rotateX(-Math.PI / 180 * 90);
-        geometry.rotateY(-Math.PI / 180 * 90);
-        const material = new THREE.MeshBasicMaterial({map: texture, wireframe: false});
-        const cube = new THREE.Mesh(geometry, material);
-        cube.position.set(Math.random() * 100, 1, Math.random() * 100);
-        cube.position.y = groundHeight(cube.position) + 1;
-        scene.add(cube);
-
-        targets.push({speed: new Vector3(Math.random(), 0, Math.random()), body: cube} as CowTarget);
-    }
-}
+const cowController = new CowController(scene); 
 
 if (SHOW_TRGETS_COW) {
     for (let index = 0; index < 100; index++) {
         const position = new Vector3(Math.random() * 100, 1, Math.random() * 100);
         position.y = groundHeight(position) + 1;
         const speed = new Vector3(Math.random(), 0, Math.random());
-        targets.push(createCow(scene, position, speed));
+        cowController.createCow(position, speed);
     }
 }
 
@@ -279,7 +262,12 @@ labelRenderer.domElement.style.top = '0px';
 document.body.appendChild( labelRenderer.domElement );
 
 
-window.addEventListener( 'resize', onWindowResize );
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize( window.innerWidth, window.innerHeight );
+    labelRenderer.setSize(window.innerWidth, window.innerHeight);
+});
 
 
 const player = new Player(camera, terrainController);
@@ -296,25 +284,12 @@ const player = new Player(camera, terrainController);
  * b = (a * v^2) / (L * g)
  */
 function animate( time ) {
-    const dt = clock.getDelta();
-
+    const dt = Math.min(clock.getDelta(), 0.2);
 
     if (player.horn) {
-        targets.forEach(cow => {
-            const cowDistance = cow.body.position.clone().sub(camera.position);
-            if (cowDistance.length() < 10) {
-                cow.speed.add(cowDistance.multiplyScalar(dt));
-            }
-        });
+        cowController.pushCows(camera.position);
     }
-    targets.forEach(cow => {
-        const ds = cow.speed.clone().multiplyScalar(dt);
-        cow.speed.multiplyScalar(1 - 0.5 * dt);
-        cow.body.lookAt(cow.speed.clone().add(cow.body.position));
-        cow.body.position.add(ds);
-        cow.body.position.y = groundHeight(cow.body.position) + 1.7;
-    });
-
+    cowController.update(dt);
 
     player.update(time, dt);
 
@@ -349,22 +324,13 @@ function animate( time ) {
     }
 
     terrainController.updateTerrain(camera);
-    skyObject.position.copy(camera.position.clone().setY(15));
+    skyObject.position.copy(camera.position.clone().setY(25));
 
-    // renderer.setSize(width, height);
     stats.update();
     renderer.render(scene, camera);
 
     // map - view from above
     mapCamera.position.set(camera.position.x, camera.position.y + 5, camera.position.z);
-   // renderer.setScissor( 0, 0, width / 2, height);
-    // renderer.setViewport( 0, 0, width / 2, height);
-    // renderer.setClearColor( 0xff0000, 1 );
-    // renderer.render( scene, camera );
-
-    // renderer2.setScissor(width / 2, 0, width / 2, height );
-    // renderer2.setViewport(width / 2, 0, width / 2, height );
-    // renderer2.setClearColor( 0x00ff00, 1 );
     mapRenderer.render(scene, mapCamera);
 
     // all labels
@@ -375,14 +341,6 @@ function format2(n: number) {
     return Math.round(n * 100) / 100;
 }
 
-
 function sign(n: number) {
     return n > 0 ? 1 : (n < 0 ? -1 : 0);
-}
-
-function onWindowResize() {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize( window.innerWidth, window.innerHeight );
-    labelRenderer.setSize(window.innerWidth, window.innerHeight);
 }

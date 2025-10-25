@@ -2,8 +2,9 @@ import * as THREE from 'three';
 import { TerrainController } from './terrain';
 
 const g = 10;
+const mass = 180;
 const bikeWheelbase = 1.5;
-
+const power = 2000;
 
 export class Player {
     private eyeLevel: number = 1.5;
@@ -17,7 +18,7 @@ export class Player {
 
     constructor(private camera: THREE.Camera, private terrainController: TerrainController) {
         document.addEventListener("keydown", (event) => {
-            var keyCode = event.which;
+            var keyCode = event.keyCode;
             if (keyCode == 38) {
                 this.pedal = 1;
             } else if (keyCode == 40) {
@@ -53,20 +54,20 @@ export class Player {
     public update(time: number, dt: number) {
         this.camera.position.setY(this.groundHeight(this.camera.position) + this.eyeLevel);
 
-        const mass = 80;
         const frictionGround = sign(this.speed) * mass * 0.01;
-        const frictionAir = this.speed * 0.1; // cw
-        const force = this.pedal * 300; // power of engine
+        const frictionAir = this.speed * this.speed * 0.01; // cw
+        const force = this.pedal * power; // power of engine
         const accelaration = force / mass;
         this.speed = this.speed + accelaration * dt - (frictionGround + frictionAir) * dt;
         this.speed = Math.max(this.speed, -0.5);
 
-
-
         // dy = sin(helm) * dt * v
         // tan(dHeading) = dy / dWheel
         // dHeading ∞ helm * dt * v / dWheel
-        this.helm = THREE.MathUtils.clamp(this.helm + this.control.x * dt * 50 - (this.helm * this.speed * 0.3 * dt), -45, 45);
+        this.helm = THREE.MathUtils.clamp(this.helm 
+                + this.control.x * dt * 50 / (1 + this.speed / 20) 
+                - (this.helm * this.speed * 0.1 * dt), 
+            -45, 45);
         this.heading = this.heading - this.speed * this.helm * THREE.MathUtils.DEG2RAD * dt / bikeWheelbase;
         // helm
         // camera.rotateZ(1 * dt);
@@ -83,7 +84,7 @@ export class Player {
         this.camera.position.add(dir.multiplyScalar(this.speed * dt));
 
 
-
+        // collision detection
         const bikeDirection = this.camera.getWorldDirection(new THREE.Vector3());
         const hitPosition1 = this.camera.position.clone().add(bikeDirection);
         const hitObject1 = this.terrainController.checkHit(hitPosition1);
