@@ -14,8 +14,12 @@ export class CowTarget {
     pushed = false;
     homed = false;
 
-    constructor(public body: THREE.Object3D, public speed: Vector3, public sound: THREE.Audio) {
+    constructor(public body: THREE.Object3D, public speed: Vector3, 
+            public sound: THREE.PositionalAudio,
+            public pushMusSound: THREE.PositionalAudio) {
         this.targetSpeed = speed.clone();
+        this.body.add(sound);
+        this.body.add(pushMusSound);
     }
 
     public pushFrom(position: Vector3) {
@@ -30,10 +34,10 @@ export class CowTarget {
             const maxSpeed = Math.min(this.targetSpeed.length(), 4.0);
             this.targetSpeed.normalize().multiplyScalar(maxSpeed);
         
-            if (!this.pushed) {
+            if (!this.pushed && !this.pushMusSound.isPlaying) {
                 setTimeout(() => {
-                    this.sound.setVolume(0.5 * Math.random());
-                    this.sound.play();
+                    this.pushMusSound.setVolume(1);
+                    this.pushMusSound.play();
                     this.pushed = false;
                 }, Math.random() * 2.0 * 1000);
                 
@@ -52,7 +56,7 @@ export class CowTarget {
         }
 
         const ds = this.speed.clone().multiplyScalar(dt);
-        this.targetSpeed.multiplyScalar(1 - 0.5 * dt); // deceleration
+        this.targetSpeed.multiplyScalar(1 - 0.3 * dt); // deceleration
 
         this.speed = this.speed.clone().multiplyScalar(1.0 - dt * 0.4)
                 .add(this.targetSpeed.clone().multiplyScalar(dt * 0.4))
@@ -62,6 +66,11 @@ export class CowTarget {
         this.body.position.add(ds);
 
         this.body.position.y = 1.7;
+
+        if (!this.sound.isPlaying && Math.random() < 3.0 / 60 * dt) {
+            this.sound.setVolume(0.5);
+            this.sound.play();
+        }
     }
 
     public checkHit(position: Vector3) {
@@ -113,7 +122,8 @@ export class CowController {
         body.position.set(position.x, position.y, position.z);
         this.scene.add(body);
         const sound = this.game.createCowMuhSound();
-        const cow = new CowTarget(body, speed, sound);
+        const pushMuhSound = this.game.createCowPushMuhSound();
+        const cow = new CowTarget(body, speed, sound, pushMuhSound);
         this.targets.push(cow);
     }
 

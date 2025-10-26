@@ -10,8 +10,7 @@ export class Game {
         camera.add(this.audioListener);
     }
 
-    loadSound(file) {
-        const sound = new THREE.Audio(this.audioListener);
+    loadSound(sound: THREE.Audio, file: string) {
         audioLoader.load(file, buffer => {
             sound.setBuffer( buffer );
             sound.setLoop( false );
@@ -20,16 +19,30 @@ export class Game {
         return sound;
     }
 
+    loadSound2(sound: THREE.PositionalAudio, file: string) {
+        audioLoader.load(file, buffer => {
+            sound.setBuffer( buffer );
+            sound.setLoop( false );
+            sound.setVolume( 0.5 );
+        });
+        return sound;
+    }
+
+
     createHornSound() {
-        return this.loadSound('assets/sound/old-car-horn-153262.mp3');
+        return this.loadSound(new THREE.Audio(this.audioListener), 'assets/sound/old-car-horn-153262.mp3');
     }
 
     createCowMuhSound() {
-        return this.loadSound('assets/sound/cow-mooing-type-01-293301.mp3');
+        return this.loadSound2(new THREE.PositionalAudio(this.audioListener), 'assets/sound/cow-mooing-type-01-293301.mp3');
+    }
+
+    createCowPushMuhSound() {
+        return this.loadSound2(new THREE.PositionalAudio(this.audioListener), 'assets/sound/cow-voice-383530.mp3');
     }
 
     createCrashSound() {
-        return this.loadSound('assets/sound/car-crash-sound-376882.mp3');
+        return this.loadSound(new THREE.Audio(this.audioListener), 'assets/sound/car-crash-sound-376882.mp3');
     }
 }
  
