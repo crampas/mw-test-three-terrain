@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { TerrainController } from './terrain';
 import { CowController } from './cow';
+import { Game } from './game';
 
 const g = 10;
 const mass = 180;
@@ -17,7 +18,11 @@ export class Player {
     public heading: number = 0.0;
     public horn: boolean = false;
 
+    public crashSound: THREE.Audio = null;
+    public crashed: boolean = false;
+
     constructor(private camera: THREE.Camera, 
+            game: Game,
             private terrainController: TerrainController,
             private cowController: CowController
         ) {
@@ -53,6 +58,8 @@ export class Player {
                 this.horn = false;
             }
         }, false);
+
+        this.crashSound = game.createCrashSound();
     }
 
     public update(time: number, dt: number) {
@@ -89,6 +96,7 @@ export class Player {
 
 
         // collision detection
+        let hit = false;
         const bikeDirection = this.camera.getWorldDirection(new THREE.Vector3());
         const hitPosition1 = this.camera.position.clone().add(bikeDirection);
         const hitPosition2 = this.camera.position.clone();
@@ -96,13 +104,21 @@ export class Player {
         const hitTerrain1 = this.terrainController.checkHit(hitPosition1);
         const hitTerrain2 = this.terrainController.checkHit(hitPosition2);
         if (hitTerrain1 || hitTerrain2) {
-            this.speed = Math.max(Math.min(this.speed, 0), -0.5);
+            hit = true;
         }
         const hitCow1 = this.cowController.checkHit(hitPosition1);
         const hitCow2 = this.cowController.checkHit(hitPosition2);
         if (hitCow1 || hitCow2) {
-            this.speed = Math.max(Math.min(this.speed, 0), -0.5);
+            hit = true;
         }
+
+        if (hit) {
+            this.speed = Math.max(Math.min(this.speed, 0), -0.5);
+            if (!this.crashed && !this.crashSound.isPlaying) {
+                this.crashSound.play();
+            }
+        }
+        this.crashed = hit;
     }
 
     groundHeight(position: THREE.Vector3) {

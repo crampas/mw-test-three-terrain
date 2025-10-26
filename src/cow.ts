@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import {Color, MathUtils, Mesh, Object3D, Scene, Vector3} from "three";
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
 import { BehaviorSubject, Observable, single, defer, shareReplay } from 'rxjs';
+import { Game } from './game';
 
 const cowTexture = new THREE.TextureLoader().load('assets/textures/Kuhfellmuster.jpg');
 export const cowMaterial = new THREE.MeshBasicMaterial({map: cowTexture, wireframe: false});
@@ -10,23 +11,40 @@ const homeZone = new THREE.Sphere(new THREE.Vector3(50, 0, 50), 10);
 
 export class CowTarget {
     targetSpeed: Vector3 = new THREE.Vector3();
+    pushed = false;
+    homed = false;
 
-    constructor(public body: THREE.Object3D, public speed: Vector3) {
+    constructor(public body: THREE.Object3D, public speed: Vector3, public sound: THREE.Audio) {
         this.targetSpeed = speed.clone();
     }
 
     public pushFrom(position: Vector3) {
+        if (this.homed) {
+            return;
+        }
+
         const cowDistance = this.body.position.clone().sub(position);
         if (cowDistance.length() < 20) {
             // this.speed.add(cowDistance.multiplyScalar(0.1 / (cowDistance.length() + 1.0)));
             this.targetSpeed.add(cowDistance.multiplyScalar(0.1 / (cowDistance.length() + 1.0)));
             const maxSpeed = Math.min(this.targetSpeed.length(), 4.0);
             this.targetSpeed.normalize().multiplyScalar(maxSpeed);
+        
+            if (!this.pushed) {
+                setTimeout(() => {
+                    this.sound.setVolume(0.5 * Math.random());
+                    this.sound.play();
+                    this.pushed = false;
+                }, Math.random() * 2.0 * 1000);
+                
+            }
+            this.pushed = true;
         }
     }
 
     public update(dt: number) {
         if (homeZone.containsPoint(this.body.position)) {
+            this.homed = true;
             this.body.position.setY(0);
             this.speed.multiplyScalar(0);
             this.targetSpeed = new Vector3();
@@ -79,24 +97,24 @@ const cowModel = new Observable<THREE.Object3D>((subscriber) => {
     );
 }).pipe(shareReplay(1));
 
-export const createCow = (scene: Scene, position: Vector3, speed: Vector3) => {
-    const body: THREE.Object3D = new THREE.Group();
-    cowModel.subscribe(model => {
-        body.add(model.clone());
-    });
-    body.position.set(position.x, position.y, position.z);
-    scene.add(body);
-    return new CowTarget(body, speed);
-}
 
 export class CowController {
     public targets: CowTarget[] = [];
+    sound: THREE.Audio = null;
 
-    constructor(private scene: THREE.Scene) {
+    constructor(private scene: THREE.Scene, private game: Game) {
     }
 
     createCow(position: Vector3, speed: Vector3) {
-        this.targets.push(createCow(this.scene, position, speed));
+        const body: THREE.Object3D = new THREE.Group();
+        cowModel.subscribe(model => {
+            body.add(model.clone());
+        });
+        body.position.set(position.x, position.y, position.z);
+        this.scene.add(body);
+        const sound = this.game.createCowMuhSound();
+        const cow = new CowTarget(body, speed, sound);
+        this.targets.push(cow);
     }
 
     pushCows(position: Vector3) {

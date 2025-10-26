@@ -5,11 +5,11 @@ import {GLTFLoader} from "three/examples/jsm/loaders/GLTFLoader";
 import {DRACOLoader} from "three/examples/jsm/loaders/DRACOLoader";
 import {Color, MathUtils, Mesh, Object3D, Scene, Vector3} from "three";
 import {CSS2DObject, CSS2DRenderer} from "three/examples/jsm/renderers/CSS2DRenderer";
-import {OBJLoader} from "three/examples/jsm/loaders/OBJLoader";
 import {Gauge} from "./gauge";
-import { CowController, CowTarget, createCow } from './cow';
+import { CowController, CowTarget } from './cow';
 import { TerrainController } from './terrain';
 import { Player } from './player';
+import { Game } from './game';
 
 
 const SHOW_TRGETS = false;
@@ -29,6 +29,54 @@ scene.add(new THREE.AmbientLight(new THREE.Color().setHex(0xaaffff)));
 scene.background = new THREE.Color().setHex(0xc0c0c0);
 // scene.fog = new THREE.FogExp2( 0xc0c0c0, 0.050 );
 scene.fog = new THREE.FogExp2(0xc0c0c0, 0.020);
+
+
+const width = window.innerWidth, height = window.innerHeight;
+const camera = new THREE.PerspectiveCamera( 60, width / height, 0.1, 200 );
+
+const mapCamera = new THREE.OrthographicCamera(50, -50, -50, 50, 1, 200);
+mapCamera.position.set(50, 20, 50);
+mapCamera.lookAt(50, 0, 50);
+
+
+const game = new Game(scene, camera);
+const sound = game.createHornSound();
+
+const renderer = new THREE.WebGLRenderer( { antialias: true } );
+renderer.setSize( width, height );
+renderer.setAnimationLoop( animate );
+// renderer.setScissorTest( true );
+renderer.domElement.style.position = 'absolute';
+renderer.domElement.style.width = '100%';
+renderer.domElement.style.height = '100%';
+document.body.appendChild( renderer.domElement );
+
+const mapRenderer = new THREE.WebGLRenderer( { antialias: true } );
+mapRenderer.setSize( width / 4, height / 4 );
+// mapRenderer.setAnimationLoop( animate );
+// renderer2.setScissorTest( true );
+mapRenderer.domElement.style.position = 'absolute';
+mapRenderer.domElement.style.width = '100px';
+mapRenderer.domElement.style.height = '100px';
+mapRenderer.domElement.style.right = '50px';
+mapRenderer.domElement.style.top = '50px';
+document.body.appendChild( mapRenderer.domElement );
+
+const labelRenderer = new CSS2DRenderer();
+labelRenderer.setSize( window.innerWidth, window.innerHeight );
+labelRenderer.domElement.style.position = 'absolute';
+labelRenderer.domElement.style.top = '0px';
+document.body.appendChild( labelRenderer.domElement );
+
+
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize( window.innerWidth, window.innerHeight );
+    labelRenderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+
 
 // ============================================================================
 // horse
@@ -101,19 +149,6 @@ const label = (() => {
 // ============================================================================
 
 
-const clock = new THREE.Clock();
-
-
-const width = window.innerWidth, height = window.innerHeight;
-const camera = new THREE.PerspectiveCamera( 60, width / height, 0.1, 200 );
-camera.position.set( 0, 1, 0 );
-camera.lookAt(20, 1, 0);
-
-const mapCamera = new THREE.OrthographicCamera(50, -50, -50, 50, 1, 200);
-mapCamera.position.set(50, 20, 50);
-mapCamera.lookAt(50, 0, 50);
-
-
 const stats = new Stats();
 document.body.appendChild( stats.dom );
 
@@ -150,7 +185,7 @@ function groundHeight(position: Vector3) {
 // ============================================================================
 // cows
 
-const cowController = new CowController(scene); 
+const cowController = new CowController(scene, game); 
 
 if (SHOW_TRGETS_COW) {
     for (let index = 0; index < 100; index++) {
@@ -176,43 +211,11 @@ const skyObject = (() => {
 
 
 // =============================================================================
+const player = new Player(camera, game, terrainController, cowController);
 
-const renderer = new THREE.WebGLRenderer( { antialias: true } );
-renderer.setSize( width, height );
-renderer.setAnimationLoop( animate );
-// renderer.setScissorTest( true );
-renderer.domElement.style.position = 'absolute';
-renderer.domElement.style.width = '100%';
-renderer.domElement.style.height = '100%';
-document.body.appendChild( renderer.domElement );
+// =============================================================================
 
-const mapRenderer = new THREE.WebGLRenderer( { antialias: true } );
-mapRenderer.setSize( width / 4, height / 4 );
-mapRenderer.setAnimationLoop( animate );
-// renderer2.setScissorTest( true );
-mapRenderer.domElement.style.position = 'absolute';
-mapRenderer.domElement.style.width = '100px';
-mapRenderer.domElement.style.height = '100px';
-mapRenderer.domElement.style.right = '50px';
-mapRenderer.domElement.style.top = '50px';
-document.body.appendChild( mapRenderer.domElement );
-
-const labelRenderer = new CSS2DRenderer();
-labelRenderer.setSize( window.innerWidth, window.innerHeight );
-labelRenderer.domElement.style.position = 'absolute';
-labelRenderer.domElement.style.top = '0px';
-document.body.appendChild( labelRenderer.domElement );
-
-
-window.addEventListener('resize', () => {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize( window.innerWidth, window.innerHeight );
-    labelRenderer.setSize(window.innerWidth, window.innerHeight);
-});
-
-
-const player = new Player(camera, terrainController, cowController);
+const clock = new THREE.Clock();
 
 /**
  *
@@ -225,7 +228,7 @@ const player = new Player(camera, terrainController, cowController);
  *
  * b = (a * v^2) / (L * g)
  */
-function animate( time ) {
+function animate(time) {
     const dt = clock.getDelta();
     if (dt > 0.2) {
         return;
@@ -233,6 +236,9 @@ function animate( time ) {
 
     if (player.horn) {
         cowController.pushCows(camera.position);
+        if (!sound.isPlaying) {
+            sound.play();       
+        }
     }
     cowController.update(dt);
 
